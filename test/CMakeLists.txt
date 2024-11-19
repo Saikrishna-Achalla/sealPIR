@@ -23,3 +23,7 @@ add_test(NAME replace_test COMMAND replace_test)
 add_executable(decomposition_test decomposition_test.cpp)
 target_link_libraries(decomposition_test sealpir)
 add_test(NAME decomposition_test COMMAND decomposition_test)
+
+add_executable(generate_query_test generate_query_test.cpp)
+target_link_libraries(generate_query_test sealpir)
+add_test(NAME generate_query_test COMMAND generate_query_test)

@@ -42,6 +42,6 @@ int main(int argc, char *argv[]) {
   for (int i = 0; i < ele_size * num_ele; i++) {
     cout << (int)output[i] << endl;
   }
-
+  std::cout.flush();
   return 0;
 }

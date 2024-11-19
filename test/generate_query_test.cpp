@@ -12,21 +12,27 @@ using namespace std::chrono;
 using namespace std;
 using namespace seal;
 
-int replace_test(uint64_t num_items, uint64_t item_size, uint32_t degree,
-                 uint32_t lt, uint32_t dim);
+int query_test(uint64_t num_items, uint64_t item_size, uint32_t degree,
+               uint32_t lt, uint32_t dim);
 
 int main(int argc, char *argv[]) {
   // Quick check
-  assert(replace_test(1 << 13, 1, 4096, 20, 1) == 0);
+  assert(query_test(1 << 10, 288, 4096, 20, 1) == 0);
 
-  // Forces ciphertext expansion to be the same as the degree
-  assert(replace_test(1 << 20, 288, 4096, 20, 1) == 0);
+//   assert(query_test(1 << 10, 288, 4096, 20, 2) == 0);
 
-  assert(replace_test(1 << 20, 288, 4096, 20, 2) == 0);
+//   assert(query_test(1 << 10, 288, 4096, 20, 3) == 0);
+
+//   assert(query_test(1 << 10, 288, 8192, 20, 2) == 0);
+
+//   // Forces ciphertext expansion to be the same as the degree
+//   assert(query_test(1 << 20, 288, 4096, 20, 1) == 0);
+
+//   assert(query_test(1 << 20, 288, 4096, 20, 2) == 0);
 }
 
-int replace_test(uint64_t num_items, uint64_t item_size, uint32_t degree,
-                 uint32_t lt, uint32_t dim) {
+int query_test(uint64_t num_items, uint64_t item_size, uint32_t degree,
+               uint32_t lt, uint32_t dim) {
   uint64_t number_of_items = num_items;
   uint64_t size_per_item = item_size; // in bytes
   uint32_t N = degree;
@@ -39,7 +45,6 @@ int replace_test(uint64_t num_items, uint64_t item_size, uint32_t degree,
   PirParams pir_params;
 
   // Generates all parameters
-
   cout << "Main: Generating SEAL parameters" << endl;
   gen_encryption_params(N, logt, enc_params);
 
@@ -81,7 +86,6 @@ int replace_test(uint64_t num_items, uint64_t item_size, uint32_t degree,
 
   // Initialize PIR client....
   PIRClient client(enc_params, pir_params);
-  Ciphertext one_ct = client.get_one();
   GaloisKeys galois_keys = client.generate_galois_keys();
 
   // Set galois key for client with id 0
@@ -92,7 +96,6 @@ int replace_test(uint64_t num_items, uint64_t item_size, uint32_t degree,
   auto time_pre_s = high_resolution_clock::now();
   server.set_database(move(db), number_of_items, size_per_item);
   server.preprocess_database();
-  server.set_one_ct(one_ct);
   cout << "Main: database pre processed " << endl;
   auto time_pre_e = high_resolution_clock::now();
   auto time_pre_us =
@@ -108,68 +111,13 @@ int replace_test(uint64_t num_items, uint64_t item_size, uint32_t degree,
        << number_of_items - 1 << "]" << endl;
   cout << "Main: FV index = " << index << ", FV offset = " << offset << endl;
 
-  // Generate a new element
-  vector<uint8_t> new_element(size_per_item);
-  vector<uint8_t> new_element_copy(size_per_item);
-  for (uint64_t i = 0; i < size_per_item; i++) {
-    uint8_t val = rd() % 256;
-    new_element[i] = val;
-    new_element_copy[i] = val;
-  }
-
-  // Get element to replace
-  auto time_server_s = high_resolution_clock::now();
-  Ciphertext reply = server.simple_query(index);
-  auto time_server_e = high_resolution_clock::now();
-  auto time_server_us =
-      duration_cast<microseconds>(time_server_e - time_server_s).count();
-  auto time_decode_s = chrono::high_resolution_clock::now();
-  Plaintext old_pt = client.decrypt(reply);
-  auto time_decode_e = chrono::high_resolution_clock::now();
-  auto time_decode_us =
-      duration_cast<microseconds>(time_decode_e - time_decode_s).count();
-
-  // Replace element
-  Modulus t = enc_params.plain_modulus();
-  logt = floor(log2(t.value()));
-  vector<uint64_t> new_coeffs =
-      bytes_to_coeffs(logt, new_element.data(), size_per_item);
-  Plaintext new_pt = client.replace_element(old_pt, new_coeffs, offset);
-  server.simple_set(index, new_pt);
-
-  // Get the replaced element
+  // Measure query generation
+  auto time_query_s = high_resolution_clock::now();
   PirQuery query = client.generate_query(index);
-  PirReply server_reply = server.generate_reply(query, 0);
-  vector<uint8_t> elems = client.decode_reply(server_reply, offset);
-  // vector<uint8_t> elems =
-  // client.extract_bytes(client.decrypt(server.simple_query(index)), offset);
-  vector<uint8_t> old_elems = client.extract_bytes(old_pt, offset);
-
-  assert(elems.size() == size_per_item);
-
-  bool failed = false;
-  // Check that we retrieved the correct element
-  for (uint32_t i = 0; i < size_per_item; i++) {
-    if (elems[i] != new_element_copy[i]) {
-      cout << "Main: elems " << (int)elems[i] << ", new "
-           << (int)new_element_copy[i] << ", old "
-           << (int)db_copy.get()[(ele_index * size_per_item) + i] << endl;
-      cout << "Main: PIR result wrong at " << i << endl;
-      failed = true;
-    }
-  }
-  if (failed) {
-    return -1;
-  }
-
-  // Output results
-  cout << "Main: PIR result correct!" << endl;
-  cout << "Main: PIRServer pre-processing time: " << time_pre_us / 1000 << " ms"
-       << endl;
-  cout << "Main: PIRServer reply generation time: " << time_server_us / 1000
-       << " ms" << endl;
-  cout << "Main: PIRClient answer decode time: " << time_decode_us / 1000
-       << " ms" << endl;
+  auto time_query_e = high_resolution_clock::now();
+  auto time_query_us =
+      duration_cast<microseconds>(time_query_e - time_query_s).count();
+  cout << "Main: query generated" << endl;
 
   return 0;
 }
