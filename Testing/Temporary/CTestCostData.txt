@@ -1,8 +1,9 @@
-coefficient_conversion_test 4 0.0562552
-expand_test 3 0.0947576
-replace_test 2 30.9112
-decomposition_test 3 0.0951774
-query_test 4 0.0186407
-simple_query_test 4 9.5912
-generate_query_test 12 0.0258652
+coefficient_conversion_test 6 0.00094009
+expand_test 5 0.017826
+replace_test 4 15.1845
+decomposition_test 5 0.00736955
+query_test 12 0
+simple_query_test 6 6.19082
+generate_query_test 14 0.0223987
 ---
+query_test

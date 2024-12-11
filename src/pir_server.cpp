@@ -11,7 +11,7 @@ PIRServer::PIRServer(const EncryptionParameters &enc_params,
       is_db_preprocessed_(false) {
   context_ = make_shared<SEALContext>(enc_params, true);
   evaluator_ = make_unique<Evaluator>(*context_);
-  xencoder_ = make_unique<BatchEncoder>(*context_);
+  encoder_ = make_unique<BatchEncoder>(*context_);
 }
 
 void PIRServer::preprocess_database() {
