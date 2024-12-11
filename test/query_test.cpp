@@ -112,66 +112,66 @@ int query_test(uint64_t num_items, uint64_t item_size, uint32_t degree,
 
 
      // Measure index extraction from db
-     auto time_start = high_resolution_clock::now();
-     for (int i = 0; i < 10000; ++i) {
-          // Extract the index from the indices array
-          uint64_t ele_index = arr[i];
-          uint64_t index = client.get_fv_index(ele_index);   // index of FV plaintext
-          uint64_t offset = client.get_fv_offset(ele_index); // offset in FV plaintext
-          // cout << "Main: element index = " << ele_index << " from [0, "
-          //      << number_of_items - 1 << "]" << endl;
-          // cout << "Main: FV index = " << index << ", FV offset = " << offset << endl;
+     // auto time_start = high_resolution_clock::now();
+     // for (int i = 0; i < 10000; ++i) {
+     //      // Extract the index from the indices array
+     //      uint64_t ele_index = arr[i];
+     //      uint64_t index = client.get_fv_index(ele_index);   // index of FV plaintext
+     //      uint64_t offset = client.get_fv_offset(ele_index); // offset in FV plaintext
+     //      // cout << "Main: element index = " << ele_index << " from [0, "
+     //      //      << number_of_items - 1 << "]" << endl;
+     //      // cout << "Main: FV index = " << index << ", FV offset = " << offset << endl;
 
-          // Generate the query given the index
-          PirQuery query = client.generate_query(index);
-          // cout << "Main: query generated" << endl;
+     //      // Generate the query given the index
+     //      PirQuery query = client.generate_query(index);
+     //      // cout << "Main: query generated" << endl;
 
-          // Have the server generate the reply
-          PirReply reply = server.generate_reply(query, 0);
-          // cout << "Main: reply generated" << endl;
+     //      // Have the server generate the reply
+     //      PirReply reply = server.generate_reply(query, 0);
+     //      // cout << "Main: reply generated" << endl;
           
-          // Have the client decode the reply
-          vector<uint8_t> elems = client.decode_reply(reply, offset);
-          // cout << "Main: reply decoded by client" << endl;
-     }
-     auto time_end = high_resolution_clock::now();
-     auto index_extraction_time = duration_cast<microseconds>(time_end - time_start).count();
+     //      // Have the client decode the reply
+     //      vector<uint8_t> elems = client.decode_reply(reply, offset);
+     //      // cout << "Main: reply decoded by client" << endl;
+     // }
+     // auto time_end = high_resolution_clock::now();
+     // auto index_extraction_time = duration_cast<microseconds>(time_end - time_start).count();
 
      // Choose an index of an element in the DB
-     // random_device rd;
-     // uint64_t ele_index =
-     //      rd() % number_of_items; // element in DB at random position
-     // uint64_t index = client.get_fv_index(ele_index);   // index of FV plaintext
-     // uint64_t offset = client.get_fv_offset(ele_index); // offset in FV plaintext
-     // cout << "Main: element index = " << ele_index << " from [0, "
-     //      << number_of_items - 1 << "]" << endl;
-     // cout << "Main: FV index = " << index << ", FV offset = " << offset << endl;
+     random_device rd;
+     uint64_t ele_index =
+          rd() % number_of_items; // element in DB at random position
+     uint64_t index = client.get_fv_index(ele_index);   // index of FV plaintext
+     uint64_t offset = client.get_fv_offset(ele_index); // offset in FV plaintext
+     cout << "Main: element index = " << ele_index << " from [0, "
+          << number_of_items - 1 << "]" << endl;
+     cout << "Main: FV index = " << index << ", FV offset = " << offset << endl;
 
      // Measure query generation
-     // auto time_query_s = high_resolution_clock::now();
-     // PirQuery query = client.generate_query(index);
-     // auto time_query_e = high_resolution_clock::now();
-     // auto time_query_us =
-     //      duration_cast<microseconds>(time_query_e - time_query_s).count();
-     // cout << "Main: query generated" << endl;
+     auto time_query_s = high_resolution_clock::now();
+     PirQuery query = client.generate_query(index);
+     auto time_query_e = high_resolution_clock::now();
+     auto time_query_us =
+          duration_cast<microseconds>(time_query_e - time_query_s).count();
+     cout << "Main: query generated" << endl;
 
      // To marshall query to send over the network, you can use
      // serialize/deserialize: std::string query_ser = serialize_query(query);
      // PirQuery query2 = deserialize_query(d, 1, query_ser, CIPHER_SIZE);
 
      // Measure query processing (including expansion)
-     // auto time_server_s = high_resolution_clock::now();
-     // PirReply reply = server.generate_reply(query, 0);
-     // auto time_server_e = high_resolution_clock::now();
-     // auto time_server_us =
-     //      duration_cast<microseconds>(time_server_e - time_server_s).count();
+     auto time_server_s = high_resolution_clock::now();
+     PirReply reply = server.generate_reply(query, 0);
+     auto time_server_e = high_resolution_clock::now();
+     auto time_server_us =
+          duration_cast<microseconds>(time_server_e - time_server_s).count();
 
-     // Measure response extraction
-     // auto time_decode_s = chrono::high_resolution_clock::now();
-     // vector<uint8_t> elems = client.decode_reply(reply, offset);
-     // auto time_decode_e = chrono::high_resolution_clock::now();
-     // auto time_decode_us =
-     //      duration_cast<microseconds>(time_decode_e - time_decode_s).count();
+     Measure response extraction
+     auto time_decode_s = chrono::high_resolution_clock::now();
+     vector<uint8_t> elems = client.decode_reply(reply, offset);
+     auto time_decode_e = chrono::high_resolution_clock::now();
+     auto time_decode_us =
+          duration_cast<microseconds>(time_decode_e - time_decode_s).count();
 
      //   assert(elems.size() == size_per_item);
 
@@ -193,15 +193,15 @@ int query_test(uint64_t num_items, uint64_t item_size, uint32_t degree,
      cout << "Main: PIR result correct!" << endl;
      cout << "Main: PIRServer pre-processing time: " << time_pre_us / 1000 << " ms"
           << endl;
-     cout << "Main: Time to extract values for all indices: " << index_extraction_time / 1000
+     // cout << "Main: Time to extract values for all indices: " << index_extraction_time / 1000
+     //      << " ms" << endl;
+     cout << "Main: PIRClient query generation time: " << time_query_us / 1000
           << " ms" << endl;
-     // cout << "Main: PIRClient query generation time: " << time_query_us / 1000
-     //      << " ms" << endl;
-     // cout << "Main: PIRServer reply generation time: " << time_server_us / 1000
-     //      << " ms" << endl;
-     // cout << "Main: PIRClient answer decode time: " << time_decode_us / 1000
-     //      << " ms" << endl;
-     // cout << "Main: Reply num ciphertexts: " << reply.size() << endl;
+     cout << "Main: PIRServer reply generation time: " << time_server_us / 1000
+          << " ms" << endl;
+     cout << "Main: PIRClient answer decode time: " << time_decode_us / 1000
+          << " ms" << endl;
+     cout << "Main: Reply num ciphertexts: " << reply.size() << endl;
 
      return 0;
 }
